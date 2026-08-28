@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 import PortfolioTable from "@/components/PortfolioTable";
+import ErrorBanner from "@/components/ErrorBanner";
+import TableSkeleton from "@/components/TableSkeleton";
 import { usePortfolioStore } from "@/store/portfolioStore";
 
 const POLL_INTERVAL = 15000;
@@ -15,6 +17,8 @@ export default function Home() {
     return () => clearInterval(id);
   }, []);
 
+  const hasData = stocks.length > 0;
+
   return (
     <main className="min-h-screen p-6 md:p-10">
       <div className="mb-6 flex items-start justify-between">
@@ -26,18 +30,18 @@ export default function Home() {
             </p>
           )}
         </div>
-        {loading && (
-          <span className="text-xs text-gray-500 animate-pulse">Fetching live data…</span>
+        {loading && hasData && (
+          <span className="text-xs text-gray-500 animate-pulse">Refreshing…</span>
         )}
       </div>
 
-      {error && (
-        <div className="mb-4 rounded-md border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-400">
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner message={error} stale={hasData} />}
 
-      <PortfolioTable stocks={stocks} />
+      {loading && !hasData ? (
+        <TableSkeleton />
+      ) : (
+        <PortfolioTable stocks={stocks} />
+      )}
     </main>
   );
 }

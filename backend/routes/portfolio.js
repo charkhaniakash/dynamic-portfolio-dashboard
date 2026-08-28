@@ -33,35 +33,38 @@ async function enrichStock(stock) {
   };
 }
 
-router.get("/", async (_req, res) => {
-  // Promise.allSettled so a single failed stock doesn't abort the whole response
-  const results = await Promise.allSettled(stocks.map(enrichStock));
+router.get("/", async (_req, res, next) => {
+  try {
+    // Promise.allSettled so a single failed stock doesn't abort the whole response
+    const results = await Promise.allSettled(stocks.map(enrichStock));
 
-  const enriched = results.map((result, i) => {
-    if (result.status === "fulfilled") return result.value;
+    const enriched = results.map((result, i) => {
+      if (result.status === "fulfilled") return result.value;
 
-    // If enrichStock itself threw (shouldn't normally happen), return the raw
-    // stock with all live fields as null so the UI still has something to show
-    console.error(`[portfolio] enrichStock failed for ${stocks[i].name}:`, result.reason);
-    const investment = stocks[i].purchasePrice * stocks[i].qty;
-    return {
-      ...stocks[i],
-      investment,
-      cmp: null,
-      presentValue: null,
-      gainLoss: null,
-      gainLossPercent: null,
-      portfolioPercent: (investment / totalInvestment) * 100,
-      peRatio: null,
-      latestEarnings: null,
-    };
-  });
+      // enrichStock rejected — return the stock with all live fields null
+      console.error(`[portfolio] ${stocks[i].name}:`, result.reason?.message);
+      const investment = stocks[i].purchasePrice * stocks[i].qty;
+      return {
+        ...stocks[i],
+        investment,
+        cmp: null,
+        presentValue: null,
+        gainLoss: null,
+        gainLossPercent: null,
+        portfolioPercent: (investment / totalInvestment) * 100,
+        peRatio: null,
+        latestEarnings: null,
+      };
+    });
 
-  res.json({
-    stocks: enriched,
-    totalInvestment,
-    fetchedAt: new Date().toISOString(),
-  });
+    res.json({
+      stocks: enriched,
+      totalInvestment,
+      fetchedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
 module.exports = router;
