@@ -1,8 +1,8 @@
 const cheerio = require("cheerio");
 const httpClient = require("./httpClient");
 const cache = require("./cache");
+const { GOOGLE_FINANCE_URL } = require("../config/urls");
 
-// Google uses "NSE" and "BOM" as exchange identifiers in their URLs
 function toGoogleSymbol(exchangeCode, exchangeType) {
   return `${exchangeCode}:${exchangeType === "NSE" ? "NSE" : "BOM"}`;
 }
@@ -12,7 +12,6 @@ function parseValue(str) {
   return isNaN(n) ? null : n;
 }
 
-// SwQK7 is the stat label class, dO6ijd is the value — check these if scraping breaks
 async function getStockData(exchangeCode, exchangeType) {
   const symbol = toGoogleSymbol(exchangeCode, exchangeType);
   const cacheKey = `google:${symbol}`;
@@ -20,10 +19,8 @@ async function getStockData(exchangeCode, exchangeType) {
   const cached = cache.get(cacheKey);
   if (cached !== null) return cached;
 
-  const url = `https://www.google.com/finance/quote/${symbol}`;
-
   try {
-    const { data } = await httpClient.get(url);
+    const { data } = await httpClient.get(GOOGLE_FINANCE_URL(symbol));
     const $ = cheerio.load(data);
 
     const rawPrice = $(".N6SYTe span span").first().text().trim();

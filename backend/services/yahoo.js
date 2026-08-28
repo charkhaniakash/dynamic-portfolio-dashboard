@@ -1,6 +1,7 @@
 const cache = require("./cache");
 const { getStockData } = require("./google");
 const httpClient = require("./httpClient");
+const { YAHOO_CHART_URL } = require("../config/urls");
 
 async function getCMP(yahooSymbol, exchangeCode, exchangeType) {
   if (!yahooSymbol) {
@@ -13,14 +14,14 @@ async function getCMP(yahooSymbol, exchangeCode, exchangeType) {
   if (cached !== null) return cached;
 
   try {
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`;
-    const res = await httpClient.get(url);
-    const data = res.data;
+    const { data } = await httpClient.get(YAHOO_CHART_URL(yahooSymbol), {
+      headers: { "Accept": "application/json" },
+    });
     const cmp = data?.chart?.result?.[0]?.meta?.regularMarketPrice ?? null;
     cache.set(cacheKey, cmp);
     return cmp;
   } catch (err) {
-    if (err.response && err.response.status === 429) {
+    if (err.response?.status === 429) {
       console.warn(`[yahoo] ${yahooSymbol}: rate limited, using Google CMP`);
     } else {
       console.error(`[yahoo] ${yahooSymbol}: ${err.message}`);
