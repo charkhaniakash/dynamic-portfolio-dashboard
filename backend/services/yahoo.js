@@ -1,8 +1,6 @@
 const cache = require("./cache");
 const { getStockData } = require("./google");
 
-// Uses Yahoo's v8 chart API (no auth needed).
-// Falls back to Google Finance CMP when Yahoo rate-limits (429).
 async function getCMP(yahooSymbol, exchangeCode, exchangeType) {
   if (!yahooSymbol) {
     const d = await getStockData(exchangeCode, exchangeType);

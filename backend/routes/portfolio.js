@@ -90,5 +90,11 @@ router.get("/", async (_req, res, next) => {
   }
 });
 
+async function getEnrichedPayload() {
+  const enriched = await enrichAllStocks();
+  return { stocks: enriched, totalInvestment, fetchedAt: new Date().toISOString() };
+}
+
 module.exports = router;
 module.exports.warmCache = warmCache;
+module.exports.getEnrichedPayload = getEnrichedPayload;

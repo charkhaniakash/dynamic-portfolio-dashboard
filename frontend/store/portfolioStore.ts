@@ -14,6 +14,8 @@ interface PortfolioState {
   loading: boolean;
   error: string | null;
   fetch: () => Promise<void>;
+  setData: (payload: { stocks: EnrichedStock[]; totalInvestment: number; fetchedAt: string }) => void;
+  setError: (message: string) => void;
 }
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
@@ -43,6 +45,20 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
         loading: false,
       });
     }
+  },
+
+  setData: (payload) => {
+    set({
+      stocks: payload.stocks,
+      totalInvestment: payload.totalInvestment,
+      lastUpdated: payload.fetchedAt,
+      error: null,
+      loading: false,
+    });
+  },
+
+  setError: (message) => {
+    set({ error: message });
   },
 }));
 

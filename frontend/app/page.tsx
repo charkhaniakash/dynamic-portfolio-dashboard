@@ -1,37 +1,37 @@
 "use client";
 
-import { useEffect } from "react";
+import { useMemo } from "react";
 import PortfolioTable from "@/components/PortfolioTable";
 import MobileStockCard from "@/components/MobileStockCard";
 import ErrorBanner from "@/components/ErrorBanner";
 import TableSkeleton from "@/components/TableSkeleton";
 import { usePortfolioStore, selectGroupedBySector } from "@/store/portfolioStore";
-import { useMemo } from "react";
-
-const POLL_INTERVAL = 15000;
+import { usePortfolioSocket } from "@/hooks/usePortfolioSocket";
 
 export default function Home() {
-  const { stocks, lastUpdated, loading, error, fetch } = usePortfolioStore();
+  const { stocks, lastUpdated, loading, error } = usePortfolioStore();
   const groups = useMemo(() => selectGroupedBySector(stocks), [stocks]);
-
-  useEffect(() => {
-    fetch();
-    const id = setInterval(fetch, POLL_INTERVAL);
-    return () => clearInterval(id);
-  }, []);
+  usePortfolioSocket();
 
   const hasData = stocks.length > 0;
 
   return (
     <main className="min-h-screen p-6 md:p-10">
       <div className="mb-6 flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-100">Portfolio Dashboard</h1>
-          {lastUpdated && (
-            <p className="mt-1 text-xs text-gray-500">
-              Last updated: {new Date(lastUpdated).toLocaleTimeString()} · refreshes every 15s
-            </p>
-          )}
+        <div className="flex items-center gap-3">
+          <img
+            src="https://www.8byte.ai/icons/logo.svg"
+            alt="8byte.ai"
+            className="h-8 w-8"
+          />
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-100">Portfolio Dashboard</h1>
+            {lastUpdated && (
+              <p className="mt-1 text-xs text-gray-500">
+                Last updated: {new Date(lastUpdated).toLocaleTimeString()} · refreshes every 15s
+              </p>
+            )}
+          </div>
         </div>
         {loading && hasData && (
           <span className="text-xs text-gray-500 animate-pulse">Refreshing…</span>
