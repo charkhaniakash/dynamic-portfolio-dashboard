@@ -1,17 +1,15 @@
-// Raw shape stored in portfolio.json — only fields that never change
 export interface Stock {
   name: string;
   purchasePrice: number;
   qty: number;
-  // The ticker symbol or BSE code used to look up live data.
-  // NSE tickers are strings like "HDFCBANK"; BSE codes are 6-digit numbers stored as strings.
   exchangeCode: string;
   exchangeType: "NSE" | "BSE";
   sector: string;
+  // NSE ticker verified against Yahoo's v8 API. BSE numeric codes mostly 404 on Yahoo.
+  // null for stocks where Yahoo has no working symbol (e.g. recently merged entities).
+  yahooSymbol: string | null;
 }
 
-// What the backend returns after enriching each stock with live data.
-// Fields that couldn't be fetched are null — the UI handles the null display.
 export interface EnrichedStock extends Stock {
   cmp: number | null;
   investment: number;
@@ -23,7 +21,6 @@ export interface EnrichedStock extends Stock {
   latestEarnings: number | null;
 }
 
-// Sector-level aggregates computed from the enriched stocks in that group
 export interface SectorSummary {
   sector: string;
   totalInvestment: number;
@@ -31,7 +28,6 @@ export interface SectorSummary {
   totalGainLoss: number | null;
 }
 
-// The full API response shape
 export interface PortfolioResponse {
   stocks: EnrichedStock[];
   totalInvestment: number;

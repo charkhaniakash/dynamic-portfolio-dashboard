@@ -1,6 +1,5 @@
 const express = require("express");
 const cors = require("cors");
-
 const portfolioRouter = require("./routes/portfolio");
 
 const app = express();
@@ -10,9 +9,9 @@ app.use(cors({ origin: "http://localhost:3000" }));
 app.use(express.json());
 
 app.use("/api/portfolio", portfolioRouter);
-
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
 
+// Without this, Express sends an HTML error page on unhandled throws
 app.use((err, _req, res, _next) => {
   console.error("[server]", err);
   res.status(500).json({ error: "Internal server error" });

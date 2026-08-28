@@ -1,11 +1,8 @@
-// In-memory cache keyed by stock symbol.
-// Lives in module scope so it persists across requests within the same process.
-// Limitation: resets on server restart and is not shared across multiple instances —
-// Redis would be the natural next step when scaling horizontally.
+// Simple Map-based cache. Resets on restart — fine for a single instance.
+// If this ever runs behind a load balancer, swap this out for Redis.
 
 const store = new Map();
-
-const TTL_MS = 15000; // matches the frontend poll interval
+const TTL_MS = 15000;
 
 function get(key) {
   const entry = store.get(key);

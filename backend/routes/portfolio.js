@@ -6,11 +6,9 @@ const stocks = require("../data/portfolio.json");
 
 const totalInvestment = stocks.reduce((sum, s) => sum + s.purchasePrice * s.qty, 0);
 
-// Enrich a single stock with live CMP, P/E and computed fields.
-// Any failed fetch returns null for that field — the response is always complete.
 async function enrichStock(stock) {
   const [cmp, { peRatio, latestEarnings }] = await Promise.all([
-    getCMP(stock.exchangeCode, stock.exchangeType),
+    getCMP(stock.yahooSymbol),
     getPEAndEarnings(stock.exchangeCode, stock.exchangeType),
   ]);
 
@@ -35,13 +33,11 @@ async function enrichStock(stock) {
 
 router.get("/", async (_req, res, next) => {
   try {
-    // Promise.allSettled so a single failed stock doesn't abort the whole response
     const results = await Promise.allSettled(stocks.map(enrichStock));
 
     const enriched = results.map((result, i) => {
       if (result.status === "fulfilled") return result.value;
 
-      // enrichStock rejected — return the stock with all live fields null
       console.error(`[portfolio] ${stocks[i].name}:`, result.reason?.message);
       const investment = stocks[i].purchasePrice * stocks[i].qty;
       return {

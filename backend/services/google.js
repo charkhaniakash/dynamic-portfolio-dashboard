@@ -2,19 +2,18 @@ const cheerio = require("cheerio");
 const httpClient = require("./httpClient");
 const cache = require("./cache");
 
-// Google Finance uses "NSE" for NSE stocks and "BOM" for BSE stocks.
+// Google uses "NSE" and "BOM" as exchange identifiers in their URLs
 function toGoogleSymbol(exchangeCode, exchangeType) {
   return `${exchangeCode}:${exchangeType === "NSE" ? "NSE" : "BOM"}`;
 }
 
-// Strip currency symbols and parse — Google shows values like "₹51.21"
-function parseFinanceValue(str) {
+function parseValue(str) {
   const n = parseFloat(str.replace(/[^0-9.-]/g, ""));
   return isNaN(n) ? null : n;
 }
 
-// Scraping approach is unavoidable — Google Finance has no public API.
-// The CSS classes (SwQK7, dO6ijd) could change if Google redesigns the page.
+// SwQK7 is the label class, dO6ijd is the value next to it.
+// These are obfuscated class names — worth checking if scraping breaks after a Google deploy.
 async function getPEAndEarnings(exchangeCode, exchangeType) {
   const symbol = toGoogleSymbol(exchangeCode, exchangeType);
   const cacheKey = `google:${symbol}`;
@@ -34,8 +33,8 @@ async function getPEAndEarnings(exchangeCode, exchangeType) {
     $(".SwQK7").each((_i, el) => {
       const label = $(el).text().trim();
       const value = $(el).siblings(".dO6ijd").text().trim();
-      if (label === "P/E ratio") peRatio = parseFinanceValue(value);
-      if (label === "EPS") latestEarnings = parseFinanceValue(value);
+      if (label === "P/E ratio") peRatio = parseValue(value);
+      if (label === "EPS") latestEarnings = parseValue(value);
     });
 
     const result = { peRatio, latestEarnings };
