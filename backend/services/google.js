@@ -1,5 +1,6 @@
 const cheerio = require("cheerio");
 const httpClient = require("./httpClient");
+const cache = require("./cache");
 
 // Google Finance uses "NSE" for NSE stocks and "BOM" for BSE stocks.
 function toGoogleSymbol(exchangeCode, exchangeType) {
@@ -16,24 +17,30 @@ function parseFinanceValue(str) {
 // The CSS classes (SwQK7, dO6ijd) could change if Google redesigns the page.
 async function getPEAndEarnings(exchangeCode, exchangeType) {
   const symbol = toGoogleSymbol(exchangeCode, exchangeType);
+  const cacheKey = `google:${symbol}`;
+
+  const cached = cache.get(cacheKey);
+  if (cached !== null) return cached;
+
   const url = `https://www.google.com/finance/quote/${symbol}`;
 
   try {
     const { data } = await httpClient.get(url);
-
     const $ = cheerio.load(data);
+
     let peRatio = null;
     let latestEarnings = null;
 
     $(".SwQK7").each((_i, el) => {
       const label = $(el).text().trim();
       const value = $(el).siblings(".dO6ijd").text().trim();
-
       if (label === "P/E ratio") peRatio = parseFinanceValue(value);
       if (label === "EPS") latestEarnings = parseFinanceValue(value);
     });
 
-    return { peRatio, latestEarnings };
+    const result = { peRatio, latestEarnings };
+    cache.set(cacheKey, result);
+    return result;
   } catch (err) {
     console.error(`[google] ${symbol}: ${err.message}`);
     return { peRatio: null, latestEarnings: null };

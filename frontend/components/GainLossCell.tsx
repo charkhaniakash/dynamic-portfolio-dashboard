@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { fmt } from "@/lib/fmt";
 import { gainLossColor } from "@/lib/gainLoss";
 
@@ -6,7 +7,7 @@ interface Props {
   percent?: number | null;
 }
 
-export default function GainLossCell({ value, percent }: Props) {
+function GainLossCell({ value, percent }: Props) {
   if (value == null) return <span className="text-gray-500">—</span>;
 
   return (
@@ -18,3 +19,5 @@ export default function GainLossCell({ value, percent }: Props) {
     </span>
   );
 }
+
+export default memo(GainLossCell);

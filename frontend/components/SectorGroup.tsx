@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { flexRender, Row } from "@tanstack/react-table";
 import { EnrichedStock, SectorSummary } from "@/types/portfolio";
 import { fmt } from "@/lib/fmt";
@@ -12,7 +13,7 @@ interface Props {
   columnCount: number;
 }
 
-export default function SectorGroup({ sector, rows, summary, columnCount }: Props) {
+function SectorGroup({ sector, rows, summary, columnCount }: Props) {
   return (
     <>
       <tr className="bg-gray-800/60">
@@ -55,3 +56,5 @@ export default function SectorGroup({ sector, rows, summary, columnCount }: Prop
     </>
   );
 }
+
+export default memo(SectorGroup);
