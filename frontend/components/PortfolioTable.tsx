@@ -10,6 +10,7 @@ import {
 import { EnrichedStock } from "@/types/portfolio";
 import { fmt } from "@/lib/fmt";
 import SectorGroup from "./SectorGroup";
+import GainLossCell from "./GainLossCell";
 import { selectGroupedBySector } from "@/store/portfolioStore";
 
 const col = createColumnHelper<EnrichedStock>();
@@ -51,18 +52,12 @@ const columns = [
   }),
   col.accessor("gainLoss", {
     header: "Gain / Loss",
-    cell: (i) => {
-      const v = i.getValue();
-      const pct = i.row.original.gainLossPercent;
-      if (v == null) return <span className="text-gray-500">—</span>;
-      const color = v > 0 ? "text-green-400" : v < 0 ? "text-red-400" : "text-gray-400";
-      return (
-        <span className={color}>
-          {fmt.currency(v)}{" "}
-          <span className="text-xs opacity-75">({fmt.percent(pct)})</span>
-        </span>
-      );
-    },
+    cell: (i) => (
+      <GainLossCell
+        value={i.getValue()}
+        percent={i.row.original.gainLossPercent}
+      />
+    ),
   }),
   col.accessor("peRatio", {
     header: "P/E Ratio",
