@@ -1,0 +1,32 @@
+# deps
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# next.js
+.next/
+frontend/.next/
+frontend/out/
+out/
+
+# lock files (too noisy in diffs)
+pnpm-lock.yaml
+frontend/pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# source data (binary, not useful in git)
+Loaded_data.xlsx
+
+# env
+.env
+.env.local
+.env.*.local
+frontend/.env
+frontend/.env.local
+backend/.env
+
+# misc
+.DS_Store
+*.log
+

@@ -1,0 +1,12 @@
+{
+  "name": "portfolio-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev:frontend": "pnpm --filter portfolio-frontend dev",
+    "dev:backend": "pnpm --filter portfolio-backend dev",
+    "build": "pnpm --filter portfolio-frontend build",
+    "install:all": "pnpm install"
+  },
+  "packageManager": "pnpm@11.20.0"
+}
