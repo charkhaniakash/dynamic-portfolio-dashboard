@@ -12,9 +12,7 @@ function parseValue(str) {
   return isNaN(n) ? null : n;
 }
 
-// Scrapes CMP, P/E and EPS in one page hit.
-// CMP is used as fallback when Yahoo rate-limits; P/E + EPS are always from here.
-// SwQK7/dO6ijd are obfuscated class names — check these first if scraping breaks.
+// SwQK7 is the stat label class, dO6ijd is the value — check these if scraping breaks
 async function getStockData(exchangeCode, exchangeType) {
   const symbol = toGoogleSymbol(exchangeCode, exchangeType);
   const cacheKey = `google:${symbol}`;

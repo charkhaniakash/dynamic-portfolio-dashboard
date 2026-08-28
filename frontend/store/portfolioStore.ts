@@ -62,7 +62,6 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
   },
 }));
 
-// Sector totals are derived, not stored — no point keeping them in Zustand state
 export function selectGroupedBySector(stocks: EnrichedStock[]): SectorGroup[] {
   const map = new Map<string, EnrichedStock[]>();
 
@@ -75,8 +74,7 @@ export function selectGroupedBySector(stocks: EnrichedStock[]): SectorGroup[] {
   return Array.from(map.entries()).map(([sector, sectorStocks]) => {
     const totalInvestment = sectorStocks.reduce((s, st) => s + st.investment, 0);
 
-    // Don't sum present value if any stock in the sector is missing CMP —
-    // a partial total is worse than showing nothing
+    // partial sector totals are misleading — only show when all stocks have live CMP
     const allHavePV = sectorStocks.every((st) => st.presentValue != null);
     const totalPresentValue = allHavePV
       ? sectorStocks.reduce((s, st) => s + st.presentValue!, 0)

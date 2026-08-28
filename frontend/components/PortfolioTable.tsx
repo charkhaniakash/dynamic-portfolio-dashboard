@@ -82,10 +82,8 @@ function PortfolioTable({ stocks }: Props) {
     getCoreRowModel: getCoreRowModel(),
   });
 
-  // Build a lookup from stock name → row so SectorGroup can render the correct rows
   const rowsByName = useMemo(() => {
-    const map = new Map(table.getRowModel().rows.map((r) => [r.original.name, r]));
-    return map;
+    return new Map(table.getRowModel().rows.map((r) => [r.original.name, r]));
   }, [table.getRowModel().rows]);
 
   return (

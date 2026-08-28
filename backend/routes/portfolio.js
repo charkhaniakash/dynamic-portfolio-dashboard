@@ -6,8 +6,6 @@ const stocks = require("../data/portfolio.json");
 
 const totalInvestment = stocks.reduce((sum, s) => sum + s.purchasePrice * s.qty, 0);
 
-// 500ms between batches is enough when the IP isn't flagged.
-// 2s was only needed during dev when Yahoo had temporarily blocked the machine.
 async function runInBatches(items, fn, batchSize = 5, delayMs = 500) {
   const results = [];
   for (let i = 0; i < items.length; i += batchSize) {
@@ -69,31 +67,25 @@ async function enrichAllStocks() {
   });
 }
 
-// Warm the cache as soon as the server starts so the first page load
-// hits cached data instead of waiting for 29 external requests
 async function warmCache() {
   console.log("[portfolio] warming cache...");
   await enrichAllStocks();
   console.log("[portfolio] cache ready");
 }
 
-router.get("/", async (_req, res, next) => {
-  try {
-    const enriched = await enrichAllStocks();
-    res.json({
-      stocks: enriched,
-      totalInvestment,
-      fetchedAt: new Date().toISOString(),
-    });
-  } catch (err) {
-    next(err);
-  }
-});
-
 async function getEnrichedPayload() {
   const enriched = await enrichAllStocks();
   return { stocks: enriched, totalInvestment, fetchedAt: new Date().toISOString() };
 }
+
+router.get("/", async (_req, res, next) => {
+  try {
+    const enriched = await enrichAllStocks();
+    res.json({ stocks: enriched, totalInvestment, fetchedAt: new Date().toISOString() });
+  } catch (err) {
+    next(err);
+  }
+});
 
 module.exports = router;
 module.exports.warmCache = warmCache;

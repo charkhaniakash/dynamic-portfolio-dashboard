@@ -1,8 +1,5 @@
-// Simple Map-based cache. Resets on restart — fine for a single instance.
-// If this ever runs behind a load balancer, swap this out for Redis.
-
 const store = new Map();
-const TTL_MS = 60000; // 60s — P/E and EPS don't change that fast
+const TTL_MS = 60000;
 
 function get(key) {
   const entry = store.get(key);

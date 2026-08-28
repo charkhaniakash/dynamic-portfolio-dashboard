@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Portfolio Dashboard",
   description: "Live stock portfolio tracker",
+  icons: {
+    icon: "https://www.8byte.ai/icons/logo.svg",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

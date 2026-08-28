@@ -22,7 +22,6 @@ function initWebSocket(server) {
   wss.on("connection", async (ws) => {
     console.log("[ws] client connected, total:", wss.clients.size);
 
-    // Send immediately so the client doesn't wait for the first interval
     try {
       const payload = await getEnrichedPayload();
       ws.send(JSON.stringify(payload));

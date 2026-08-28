@@ -5,8 +5,7 @@ export interface Stock {
   exchangeCode: string;
   exchangeType: "NSE" | "BSE";
   sector: string;
-  // NSE ticker verified against Yahoo's v8 API. BSE numeric codes mostly 404 on Yahoo.
-  // null for stocks where Yahoo has no working symbol (e.g. recently merged entities).
+  // BSE numeric codes mostly 404 on Yahoo — each stock has a pre-verified NSE ticker here
   yahooSymbol: string | null;
 }
 

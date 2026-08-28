@@ -10,8 +10,6 @@ export function usePortfolioSocket() {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-  // Track whether we've ever received data — we only show "connection lost"
-  // if the socket was working before and then dropped, not on the initial connect attempt
   const hasReceivedData = useRef(false);
 
   function clearTimers() {
@@ -20,7 +18,6 @@ export function usePortfolioSocket() {
   }
 
   function startPollingFallback() {
-    console.warn("[socket] WebSocket unavailable, falling back to polling");
     fetch();
     pollTimer.current = setInterval(fetch, POLL_INTERVAL);
   }
@@ -35,7 +32,6 @@ export function usePortfolioSocket() {
     wsRef.current = ws;
 
     ws.onopen = () => {
-      console.log("[socket] connected");
       clearTimers();
     };
 
@@ -49,15 +45,11 @@ export function usePortfolioSocket() {
       }
     };
 
-    // onerror always fires before onclose — let onclose handle reconnection.
-    // Showing an error here causes a flash on every page load.
     ws.onerror = () => {
       console.warn("[socket] connection error");
     };
 
     ws.onclose = () => {
-      // Only surface the error banner if we had a working connection before.
-      // On first load, the socket might briefly fail while the backend warms up.
       if (hasReceivedData.current) {
         setError("Connection dropped — reconnecting...");
       }
