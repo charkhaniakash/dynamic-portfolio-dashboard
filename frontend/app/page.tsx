@@ -2,14 +2,17 @@
 
 import { useEffect } from "react";
 import PortfolioTable from "@/components/PortfolioTable";
+import MobileStockCard from "@/components/MobileStockCard";
 import ErrorBanner from "@/components/ErrorBanner";
 import TableSkeleton from "@/components/TableSkeleton";
-import { usePortfolioStore } from "@/store/portfolioStore";
+import { usePortfolioStore, selectGroupedBySector } from "@/store/portfolioStore";
+import { useMemo } from "react";
 
 const POLL_INTERVAL = 15000;
 
 export default function Home() {
   const { stocks, lastUpdated, loading, error, fetch } = usePortfolioStore();
+  const groups = useMemo(() => selectGroupedBySector(stocks), [stocks]);
 
   useEffect(() => {
     fetch();
@@ -40,7 +43,28 @@ export default function Home() {
       {loading && !hasData ? (
         <TableSkeleton />
       ) : (
-        <PortfolioTable stocks={stocks} />
+        <>
+          {/* Desktop */}
+          <div className="hidden md:block">
+            <PortfolioTable stocks={stocks} />
+          </div>
+
+          {/* Mobile — card view per sector */}
+          <div className="md:hidden space-y-6">
+            {groups.map((group) => (
+              <div key={group.sector}>
+                <h2 className="mb-2 text-xs font-semibold uppercase tracking-widest text-gray-500">
+                  {group.sector}
+                </h2>
+                <div className="space-y-3">
+                  {group.stocks.map((stock) => (
+                    <MobileStockCard key={stock.name} stock={stock} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </main>
   );

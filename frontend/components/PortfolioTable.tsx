@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -73,7 +73,7 @@ interface Props {
   stocks: EnrichedStock[];
 }
 
-export default function PortfolioTable({ stocks }: Props) {
+function PortfolioTable({ stocks }: Props) {
   const groups = useMemo(() => selectGroupedBySector(stocks), [stocks]);
 
   const table = useReactTable({
@@ -122,3 +122,5 @@ export default function PortfolioTable({ stocks }: Props) {
     </div>
   );
 }
+
+export default memo(PortfolioTable);
