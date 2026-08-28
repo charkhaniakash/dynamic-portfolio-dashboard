@@ -22,12 +22,13 @@ function initWebSocket(server) {
   wss.on("connection", async (ws) => {
     console.log("[ws] client connected, total:", wss.clients.size);
 
-    try {
-      const payload = await getEnrichedPayload();
-      ws.send(JSON.stringify(payload));
-    } catch (err) {
+    getEnrichedPayload().then(payload => {
+      if (ws.readyState === ws.OPEN) {
+        ws.send(JSON.stringify(payload));
+      }
+    }).catch(err => {
       console.error("[ws] initial push failed:", err.message);
-    }
+    });
 
     ws.on("close", () => {
       console.log("[ws] client disconnected, total:", wss.clients.size);

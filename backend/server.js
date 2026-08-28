@@ -7,7 +7,9 @@ const { initWebSocket } = require("./services/websocket");
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-app.use(cors({ origin: "http://localhost:3000" }));
+const ALLOWED_ORIGIN = process.env.FRONTEND_URL || "http://localhost:3000";
+
+app.use(cors({ origin: ALLOWED_ORIGIN }));
 app.use(express.json());
 app.use("/api/portfolio", portfolioRouter);
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
