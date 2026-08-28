@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -7,17 +8,11 @@ import {
   createColumnHelper,
 } from "@tanstack/react-table";
 import { EnrichedStock } from "@/types/portfolio";
+import { fmt } from "@/lib/fmt";
+import SectorGroup from "./SectorGroup";
+import { selectGroupedBySector } from "@/store/portfolioStore";
 
 const col = createColumnHelper<EnrichedStock>();
-
-const fmt = {
-  currency: (v: number | null) =>
-    v == null ? "—" : `₹${v.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`,
-  percent: (v: number | null) =>
-    v == null ? "—" : `${v.toFixed(2)}%`,
-  number: (v: number | null) =>
-    v == null ? "—" : v.toLocaleString("en-IN", { maximumFractionDigits: 2 }),
-};
 
 const columns = [
   col.accessor("name", {
@@ -84,11 +79,19 @@ interface Props {
 }
 
 export default function PortfolioTable({ stocks }: Props) {
+  const groups = useMemo(() => selectGroupedBySector(stocks), [stocks]);
+
   const table = useReactTable({
     data: stocks,
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
+
+  // Build a lookup from stock name → row so SectorGroup can render the correct rows
+  const rowsByName = useMemo(() => {
+    const map = new Map(table.getRowModel().rows.map((r) => [r.original.name, r]));
+    return map;
+  }, [table.getRowModel().rows]);
 
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-800">
@@ -108,20 +111,16 @@ export default function PortfolioTable({ stocks }: Props) {
           ))}
         </thead>
         <tbody className="divide-y divide-gray-800">
-          {table.getRowModel().rows.map((row) => (
-            <tr
-              key={row.id}
-              className="hover:bg-gray-900/50 transition-colors"
-            >
-              {row.getVisibleCells().map((cell) => (
-                <td
-                  key={cell.id}
-                  className="px-4 py-3 text-right first:text-left whitespace-nowrap"
-                >
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
-              ))}
-            </tr>
+          {groups.map((group) => (
+            <SectorGroup
+              key={group.sector}
+              sector={group.sector}
+              rows={group.stocks
+                .map((s) => rowsByName.get(s.name))
+                .filter(Boolean) as ReturnType<typeof table.getRowModel>["rows"]}
+              summary={group.summary}
+              columnCount={columns.length}
+            />
           ))}
         </tbody>
       </table>
