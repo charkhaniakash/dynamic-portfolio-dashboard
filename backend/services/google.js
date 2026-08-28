@@ -12,9 +12,10 @@ function parseValue(str) {
   return isNaN(n) ? null : n;
 }
 
-// SwQK7 is the label class, dO6ijd is the value next to it.
-// These are obfuscated class names — worth checking if scraping breaks after a Google deploy.
-async function getPEAndEarnings(exchangeCode, exchangeType) {
+// Scrapes CMP, P/E and EPS in one page hit.
+// CMP is used as fallback when Yahoo rate-limits; P/E + EPS are always from here.
+// SwQK7/dO6ijd are obfuscated class names — check these first if scraping breaks.
+async function getStockData(exchangeCode, exchangeType) {
   const symbol = toGoogleSymbol(exchangeCode, exchangeType);
   const cacheKey = `google:${symbol}`;
 
@@ -27,6 +28,9 @@ async function getPEAndEarnings(exchangeCode, exchangeType) {
     const { data } = await httpClient.get(url);
     const $ = cheerio.load(data);
 
+    const rawPrice = $(".N6SYTe span span").first().text().trim();
+    const cmp = parseValue(rawPrice.replace(/[₹,\s]/g, ""));
+
     let peRatio = null;
     let latestEarnings = null;
 
@@ -37,13 +41,13 @@ async function getPEAndEarnings(exchangeCode, exchangeType) {
       if (label === "EPS") latestEarnings = parseValue(value);
     });
 
-    const result = { peRatio, latestEarnings };
+    const result = { cmp, peRatio, latestEarnings };
     cache.set(cacheKey, result);
     return result;
   } catch (err) {
     console.error(`[google] ${symbol}: ${err.message}`);
-    return { peRatio: null, latestEarnings: null };
+    return { cmp: null, peRatio: null, latestEarnings: null };
   }
 }
 
-module.exports = { getPEAndEarnings };
+module.exports = { getStockData };
