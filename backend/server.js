@@ -19,4 +19,7 @@ app.use((err, _req, res, _next) => {
 
 app.listen(PORT, () => {
   console.log(`Backend running on http://localhost:${PORT}`);
+  portfolioRouter.warmCache().catch((err) => {
+    console.error("[server] cache warmup failed:", err.message);
+  });
 });

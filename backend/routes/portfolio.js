@@ -6,8 +6,9 @@ const stocks = require("../data/portfolio.json");
 
 const totalInvestment = stocks.reduce((sum, s) => sum + s.purchasePrice * s.qty, 0);
 
-// Firing all 29 at once gets the IP flagged by Yahoo. 2s between batches avoids that.
-async function runInBatches(items, fn, batchSize = 5, delayMs = 2000) {
+// 500ms between batches is enough when the IP isn't flagged.
+// 2s was only needed during dev when Yahoo had temporarily blocked the machine.
+async function runInBatches(items, fn, batchSize = 5, delayMs = 500) {
   const results = [];
   for (let i = 0; i < items.length; i += batchSize) {
     const batch = items.slice(i, i + batchSize);
@@ -21,8 +22,6 @@ async function runInBatches(items, fn, batchSize = 5, delayMs = 2000) {
 }
 
 async function enrichStock(stock) {
-  // getCMP tries Yahoo first, falls back to Google on 429
-  // getStockData is always Google (P/E + EPS are only on Google Finance)
   const [cmp, { peRatio, latestEarnings }] = await Promise.all([
     getCMP(stock.yahooSymbol, stock.exchangeCode, stock.exchangeType),
     getStockData(stock.exchangeCode, stock.exchangeType).then((d) => ({
@@ -50,28 +49,37 @@ async function enrichStock(stock) {
   };
 }
 
+async function enrichAllStocks() {
+  const results = await runInBatches(stocks, enrichStock);
+  return results.map((result, i) => {
+    if (result.status === "fulfilled") return result.value;
+    console.error(`[portfolio] ${stocks[i].name}:`, result.reason?.message);
+    const investment = stocks[i].purchasePrice * stocks[i].qty;
+    return {
+      ...stocks[i],
+      investment,
+      cmp: null,
+      presentValue: null,
+      gainLoss: null,
+      gainLossPercent: null,
+      portfolioPercent: (investment / totalInvestment) * 100,
+      peRatio: null,
+      latestEarnings: null,
+    };
+  });
+}
+
+// Warm the cache as soon as the server starts so the first page load
+// hits cached data instead of waiting for 29 external requests
+async function warmCache() {
+  console.log("[portfolio] warming cache...");
+  await enrichAllStocks();
+  console.log("[portfolio] cache ready");
+}
+
 router.get("/", async (_req, res, next) => {
   try {
-    const results = await runInBatches(stocks, enrichStock);
-
-    const enriched = results.map((result, i) => {
-      if (result.status === "fulfilled") return result.value;
-
-      console.error(`[portfolio] ${stocks[i].name}:`, result.reason?.message);
-      const investment = stocks[i].purchasePrice * stocks[i].qty;
-      return {
-        ...stocks[i],
-        investment,
-        cmp: null,
-        presentValue: null,
-        gainLoss: null,
-        gainLossPercent: null,
-        portfolioPercent: (investment / totalInvestment) * 100,
-        peRatio: null,
-        latestEarnings: null,
-      };
-    });
-
+    const enriched = await enrichAllStocks();
     res.json({
       stocks: enriched,
       totalInvestment,
@@ -83,3 +91,4 @@ router.get("/", async (_req, res, next) => {
 });
 
 module.exports = router;
+module.exports.warmCache = warmCache;

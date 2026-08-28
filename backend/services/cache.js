@@ -2,7 +2,7 @@
 // If this ever runs behind a load balancer, swap this out for Redis.
 
 const store = new Map();
-const TTL_MS = 15000;
+const TTL_MS = 60000; // 60s — P/E and EPS don't change that fast
 
 function get(key) {
   const entry = store.get(key);
