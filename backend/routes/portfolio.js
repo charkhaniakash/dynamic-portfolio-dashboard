@@ -6,26 +6,34 @@ const stocks = require("../data/portfolio.json");
 
 const totalInvestment = stocks.reduce((sum, s) => sum + s.purchasePrice * s.qty, 0);
 
-async function runInBatches(items, fn, batchSize = 5, delayMs = 500) {
-  const results = [];
-  for (let i = 0; i < items.length; i += batchSize) {
-    const batch = items.slice(i, i + batchSize);
-    const batchResults = await Promise.allSettled(batch.map(fn));
-    results.push(...batchResults);
-    if (i + batchSize < items.length) {
-      await new Promise((r) => setTimeout(r, delayMs));
-    }
-  }
-  return results;
+
+function buildFallbackStock(stock) {
+  const investment = stock.purchasePrice * stock.qty;
+  return {
+    ...stock,
+    investment,
+    cmp: null,
+    presentValue: null,
+    gainLoss: null,
+    gainLossPercent: null,
+    portfolioPercent: (investment / totalInvestment) * 100,
+    peRatio: null,
+    latestEarnings: null,
+  };
+}
+
+function buildFallbackPayload() {
+  return {
+    stocks: stocks.map(buildFallbackStock),
+    totalInvestment,
+    fetchedAt: new Date().toISOString(),
+  };
 }
 
 async function enrichStock(stock) {
   const [cmp, { peRatio, latestEarnings }] = await Promise.all([
     getCMP(stock.yahooSymbol, stock.exchangeCode, stock.exchangeType),
-    getStockData(stock.exchangeCode, stock.exchangeType).then((d) => ({
-      peRatio: d.peRatio,
-      latestEarnings: d.latestEarnings,
-    })),
+    getStockData(stock.exchangeCode, stock.exchangeType),
   ]);
 
   const investment = stock.purchasePrice * stock.qty;
@@ -47,44 +55,47 @@ async function enrichStock(stock) {
   };
 }
 
-async function enrichAllStocks() {
-  const results = await runInBatches(stocks, enrichStock);
-  return results.map((result, i) => {
-    if (result.status === "fulfilled") return result.value;
-    console.error(`[portfolio] ${stocks[i].name}:`, result.reason?.message);
-    const investment = stocks[i].purchasePrice * stocks[i].qty;
-    return {
-      ...stocks[i],
-      investment,
-      cmp: null,
-      presentValue: null,
-      gainLoss: null,
-      gainLossPercent: null,
-      portfolioPercent: (investment / totalInvestment) * 100,
-      peRatio: null,
-      latestEarnings: null,
-    };
-  });
+
+let activeEnrichment = null;
+
+
+function getOrStartEnrichment() {
+  if (activeEnrichment) return activeEnrichment;
+
+  activeEnrichment = Promise.allSettled(stocks.map(enrichStock))
+    .then((results) =>
+      results.map((r, i) => {
+        if (r.status === "fulfilled") return r.value;
+        console.error(`[portfolio] ${stocks[i].name}: ${r.reason?.message}`);
+        return buildFallbackStock(stocks[i]);
+      })
+    )
+    .finally(() => {
+      activeEnrichment = null;
+    });
+
+  return activeEnrichment;
 }
+
 
 async function warmCache() {
-  console.log("[portfolio] warming cache...");
-  await enrichAllStocks();
-  console.log("[portfolio] cache ready");
+  console.log("[portfolio] warming cache in background...");
+  getOrStartEnrichment()
+    .then(() => console.log("[portfolio] cache warm"))
+    .catch((err) => console.error("[portfolio] warmup error:", err.message));
 }
 
+
 async function getEnrichedPayload() {
-  const enriched = await enrichAllStocks();
+  const enriched = await getOrStartEnrichment();
   return { stocks: enriched, totalInvestment, fetchedAt: new Date().toISOString() };
 }
 
-router.get("/", async (_req, res, next) => {
-  try {
-    const enriched = await enrichAllStocks();
-    res.json({ stocks: enriched, totalInvestment, fetchedAt: new Date().toISOString() });
-  } catch (err) {
-    next(err);
-  }
+
+router.get("/", (_req, res) => {
+  getOrStartEnrichment().catch(() => { });
+
+  res.json(buildFallbackPayload());
 });
 
 module.exports = router;
