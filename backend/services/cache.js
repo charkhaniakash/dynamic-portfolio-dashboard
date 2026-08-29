@@ -1,5 +1,6 @@
+
 const store = new Map();
-const TTL_MS = 60000;
+const TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 function get(key) {
   const entry = store.get(key);

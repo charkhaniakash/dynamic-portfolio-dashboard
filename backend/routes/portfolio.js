@@ -59,10 +59,23 @@ async function enrichStock(stock) {
 let activeEnrichment = null;
 
 
+async function runInBatches(items, fn, batchSize = 3, delayMs = 300) {
+  const results = [];
+  for (let i = 0; i < items.length; i += batchSize) {
+    const batch = items.slice(i, i + batchSize);
+    const batchResults = await Promise.allSettled(batch.map(fn));
+    results.push(...batchResults);
+    if (i + batchSize < items.length) {
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
+  return results;
+}
+
 function getOrStartEnrichment() {
   if (activeEnrichment) return activeEnrichment;
 
-  activeEnrichment = Promise.allSettled(stocks.map(enrichStock))
+  activeEnrichment = runInBatches(stocks, enrichStock)
     .then((results) =>
       results.map((r, i) => {
         if (r.status === "fulfilled") return r.value;
